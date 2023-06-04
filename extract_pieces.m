@@ -1,6 +1,6 @@
 function [images_crop,count] = extract_pieces(image)
 
-threshold_gray_binary = 10/255;
+threshold_gray_binary = 0;
 threshold_min_pixels = 100;
 
 image_gray = im2gray(image)>threshold_gray_binary; % Transforming the image in binary
