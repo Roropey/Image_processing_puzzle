@@ -1,7 +1,7 @@
 function y = correlation(I, nb_piece)
 
-    [maxeur indingg] = min(I,[],2);
-    [maxing indexeur] = mink(maxeur,nb_piece);
+    [maxeur indingg] = max(I,[],2);
+    [maxing indexeur] = maxk(maxeur,nb_piece);
     indexelem =[];
     for i = 1 :nb_piece
        indexelem(i) = indingg(indexeur(i));

@@ -10,17 +10,17 @@ I2 = p2.image;
 Shape1 = p1.shape;
 Shape2 = p2.shape;
 
-top_im1 = cote_isolation(I1, 1,color_type);
-right_im1 = cote_isolation(I1, 2,color_type);
-bottom_im1 = cote_isolation(I1, 3,color_type);
-left_im1 = cote_isolation(I1, 4,color_type);
+top_im1 = cote_isolation(I1, 1);
+right_im1 = cote_isolation(I1, 2);
+bottom_im1 = cote_isolation(I1, 3);
+left_im1 = cote_isolation(I1, 4);
 
-top_im2 = cote_isolation(I2, 1,color_type);
-right_im2 = cote_isolation(I2, 2,color_type);
-bottom_im2 = cote_isolation(I2, 3,color_type);
-left_im2 = cote_isolation(I2, 4,color_type);
+top_im2 = cote_isolation(I2, 1);
+right_im2 = cote_isolation(I2, 2);
+bottom_im2 = cote_isolation(I2, 3);
+left_im2 = cote_isolation(I2, 4);
 
-comparator = 1;
+comparator = 0;
 
 if (Shape1.top == 0) 
     c1 = comparator;

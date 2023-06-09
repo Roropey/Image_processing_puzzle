@@ -4,7 +4,7 @@ function y = image_reconstruct(I, pieces_nbr, color,rayon)
     for k = 1:pieces_nbr
         shape = struct;
         pieces.s(k).image = I.piece(k).im;
-        tip = edge_detector(I.piece(k).im,rayon);
+        tip = edge_detector(I.piece(k).im);
         shape(k).top = tip(1);
         shape(k).right = tip(2);
         shape(k).bottom = tip(3);
@@ -18,7 +18,7 @@ function y = image_reconstruct(I, pieces_nbr, color,rayon)
             if k ~= i
                 correlator(k,:,i) = correlator_2pieces(pieces.s(i),pieces.s(k),color);   
             else 
-                correlator(k,:,i) = ones(1,16); 
+                correlator(k,:,i) = zeros(1,16); 
             end
             waitbar( (pieces_nbr*(i-1) +k) / (pieces_nbr*pieces_nbr))
         end
@@ -32,6 +32,10 @@ function y = image_reconstruct(I, pieces_nbr, color,rayon)
        pieces.s(i).correl = correlation(testing, pieces_nbr);
    end
    y_inter = image_positionv2(pieces);
+   if (pieces_nbr == 9)
+       y_inter = y_inter;
+   end
+   pieces = reorder(pieces,y_inter);
    m = nnz(y_inter(1,:));
    n = nnz(y_inter(:,1));
    for i=1:n

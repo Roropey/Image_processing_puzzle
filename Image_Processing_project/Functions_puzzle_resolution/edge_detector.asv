@@ -17,7 +17,7 @@ function y = edge_detector(I,rayon_found)
     Qx = m;
     Qy = n;
     
-    padding = round(rayon_found/2);
+    padding = ra/2;
     % Finding the indexes of 2 point : the nearest coin and the farest one from
     % the origin : allows to find the egde lines.
     distancesP = sqrt((columns - Px).^2 + (rows - Py) .^ 2);
