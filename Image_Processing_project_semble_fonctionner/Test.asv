@@ -1,0 +1,178 @@
+%% Create a puzzled version of an image
+clear; close all; clc; 
+addpath(".\Image_preparation")
+addpath(".\Functions_puzzle_resolution");
+addpath(".\Functions_puzzle_pieces");
+% Image black and white
+Image = imread('test5.jpg');
+Image = im2double(Image);
+figure
+imshow(Image)
+nbrPieces = 16;
+Image = cutImage(Image,nbrPieces);
+[M,N,L] = size(Image);
+R = round(min([M,N])/25);
+PuzzledImage = PuzzleCreator(Image,nbrPieces,R);
+
+shuffled_image = shuffle_color(PuzzledImage);
+figure ; imshow(shuffled_image);
+
+[images_crop,pieces_nbr] = extract_pieces(shuffled_image);
+[piece,~]=aligned_pieces(images_crop,pieces_nbr);
+I.piece=piece;
+
+
+% I=PuzzledImage;
+% order=randperm(nbrPieces);
+% for i=1:nbrPieces
+%     I.piece(i).im=PuzzledImage.piece(order(i)).im;
+% end    
+
+
+pieces_nbr=nbrPieces;
+switch pieces_nbr
+    case 16
+        piece_per_face=4;
+    case 9
+        piece_per_face=3;
+    case 4
+        piece_per_face=2;
+end
+
+figure;
+for i=1:piece_per_face
+    for j=1:piece_per_face
+        subplot(piece_per_face,piece_per_face,(j-1)*piece_per_face+i)
+        imshow(I.piece((j-1)*piece_per_face+i).im)
+    end
+end
+
+
+color=0;
+% Analyzing pieces shape
+pieces = struct;
+for k = 1:pieces_nbr
+    shape = struct;
+    pieces.s(k).image = I.piece(k).im;
+    tip = edge_detector(I.piece(k).im,rayon);
+    shape(k).top = tip(1);
+    shape(k).right = tip(2);
+    shape(k).bottom = tip(3);
+    shape(k).left = tip(4);  
+    pieces.s(k).shape = shape(k);
+end
+
+
+
+%init
+% Trouver une permière pièce pour l'algorythme : un coin
+sort=sortPiecesShape(pieces,pieces_nbr,rayon,0,0,1,1);
+result={{}};
+x=1;
+y=1;
+result{x}{y}=sort(1);
+% Enlever ce coin de la liste
+pieces=removePieces(pieces,sort(1).idx,pieces_nbr);
+pieces_nbr=pieces_nbr-1;
+% Adapter ce qu'on veut pour la prochaine pièce
+want_left=sort(1).shape.right*-1;
+want_top=0;
+want_right=(piece_per_face>2)*1;
+want_bottom=1;
+while pieces_nbr>0   
+    x=x+1;
+    % Trouver toutes les pièces qui marchent d'un point de vue forme
+    sort=sortPiecesShape(pieces,pieces_nbr,rayon,want_left,want_top,want_right,want_bottom);
+    nb_candidate_shape = size(sort,2);
+    best=0;
+    dist_best=0;
+    corr2D_best=0;
+    % Mesurer chaque pièce pour garder que la meilleure
+    for i=1:nb_candidate_shape
+        score=0;
+        corr2D=0;
+        dist=0;
+        % Analyser l'ajout avec la pièce du dessus
+        if y>1             
+            top_candidate = cote_isolation_modif(sort(i).image, 1);
+            bottom_previous = cote_isolation_modif(result{x}{y-1}.image, 3);
+            min_size=min(size(top_candidate,1),size(bottom_previous,1));
+            top_candidate=top_candidate(1:min_size,:,:);
+            bottom_previous=bottom_previous(1:min_size,:,:);
+            dist = dist + inv_mse(top_candidate,bottom_previous,color,"euclidian distance");
+            corr2D = corr2D + inv_mse(top_candidate,bottom_previous,color,"corr 2D");
+            corr2D = corr2D*(corr2D>=0);              
+        end
+        % Analyser l'ajout avec la pièce de gauche
+        if x>1
+            left_candidate = cote_isolation_modif(sort(i).image, 4);
+            right_previous = cote_isolation_modif(result{x-1}{y}.image, 2);
+            min_size=min(size(left_candidate,1),size(right_previous,1));
+            left_candidate=left_candidate(1:min_size,:,:);
+            right_previous=right_previous(1:min_size,:,:);
+            dist = dist + inv_mse(left_candidate,right_previous,color,"euclidian distance");
+            corr2D = corr2D + inv_mse(left_candidate,right_previous,color,"corr 2D");
+            corr2D = corr2D*(corr2D>=0);
+        end
+        if dist > dist_best & corr2D >= corr2D_best
+            best=i;
+            dist_best=dist;
+            corr2D_best=corr2D;
+        end
+    end
+
+    % figure;
+    % subplot(1,2,1);
+    % if x==1
+    %     imshow(result{x}{y-1}.image);
+    % else
+    %     imshow(result{x-1}{y}.image);
+    % end
+    % subplot(1,2,2);
+    % imshow(sort(best).image);
+
+    % Récuperer le meilleur et l'enlever
+    result{x}{y}=sort(best);
+    pieces=removePieces(pieces,sort(best).idx,pieces_nbr);
+    pieces_nbr=pieces_nbr-1;
+    
+    % Mise à jour de la position ainsi que
+    if sort(best).shape.right==0 | x==piece_per_face
+        x=0;
+        y=y+1;
+    end
+    if x==0
+        want_left=0;
+        want_right=1;
+        
+    else
+        want_left=sort(best).shape.right*-1;
+        want_right=(x<piece_per_face-1);
+    end
+
+    if y == 1
+        want_top=0;
+        want_bottom=1;
+    else
+        want_top=result{x+1}{y-1}.shape.bottom*-1;
+        want_bottom=(y<piece_per_face);
+    end
+end    
+
+
+figure;
+nb_row=size(result,2);
+nb_column = size(result{1},2);
+for i=1:nb_row
+    for j=1:nb_column
+        subplot(nb_row,nb_column,(j-1)*nb_row+i)
+        imshow(result{i}{j}.image)
+    end
+end
+
+% figure;
+% for i=1:4
+%     subplot(2,2,i);
+%     imshow(sort(i).image);
+% end
+
